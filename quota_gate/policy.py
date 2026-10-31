@@ -48,10 +48,15 @@ def normalize(result, *, now=None, limit_id="codex"):
             "windows": windows}
 
 
-def decide(snapshot, *, now=None, threshold=15.0, max_age=90.0, limit_id="codex"):
+def decide(snapshot, *, now=None, threshold=15.0, threshold_5h=None,
+           threshold_weekly=None, max_age=90.0, limit_id="codex"):
     now = time.time() if now is None else now
     if not number(threshold) or not 0 < threshold <= 100:
         raise ValueError("threshold must be in (0, 100]")
+    th = threshold if threshold_5h is None else threshold_5h
+    tw = threshold if threshold_weekly is None else threshold_weekly
+    if any(not number(v) or not 0 <= v <= 100 for v in (th, tw)):
+        raise ValueError("window thresholds must be in [0, 100]")
     if not number(max_age) or max_age <= 0:
         raise ValueError("max_age must be positive")
     if (not isinstance(snapshot, dict) or type(snapshot.get("schemaVersion")) is not int
@@ -86,6 +91,6 @@ def decide(snapshot, *, now=None, threshold=15.0, max_age=90.0, limit_id="codex"
         remaining[duration] = 100.0 - used
     if set(remaining) != {300, 10080}:
         return Decision(False, "missing_5h_or_weekly")
-    active = min(remaining.values()) < threshold
+    active = remaining[300] < th or remaining[10080] < tw
     return Decision(active, "below_threshold" if active else "quota_sufficient",
                     remaining[300], remaining[10080])

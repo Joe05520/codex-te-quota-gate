@@ -16,3 +16,4 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
       - run: python -m quota_gate demo
+      - run: node --check quota_gate/web/app.js

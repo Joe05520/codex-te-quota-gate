@@ -19,6 +19,20 @@
   Permissions of an existing parent directory are not silently changed.
 - No telemetry or third-party HTTP client exists in the wrapper.
 
+## Local GUI and project choices
+
+- GUI HTTP server binds to 127.0.0.1 only. It loads local packaged HTML/CSS/JS; no CDN/fonts.
+- It reads only the explicitly selected settings and quota files. There is no directory scan.
+- User-entered project paths are canonicalized (which can resolve symlink metadata), not crawled.
+- It writes independent thresholds, master toggle and project name/path/exclusion entries to
+  a private local JSON settings file. Runtime settings are ignored by git.
+- Demo has a separate runtime and generates synthetic snapshots; it never reads an account.
+- APIs need a per-process token; modifying requests also need the exact local Origin. Host
+  checking and CSP limit cross-site access. This is not protection against other trusted local
+  programs with the same filesystem access. Access logs are disabled.
+- Project exclusions control new hook forwarding by cwd; they do not erase history or redact
+  existing mixed-project transcripts. No content-erasure or data-isolation guarantee is made.
+
 ## Explicit upstream hook connection
 
 - Hook payloads, including their transcript references, are passed to upstream in memory via stdin.

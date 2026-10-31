@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="gate-token" content="__GATE_TOKEN__">
+  <title>TE Quota Gate · 額度與專案設定</title>
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">te<span>↗</span></span><span>Quota Gate<small>LOCAL CONTROL</small></span></a>
+  <div class="nav-caption">工作空間</div>
+  <nav aria-label="主選單"><a class="selected" href="#overview"><span>◫</span> 額度與啟用條件</a><a href="#projects"><span>▱</span> 專案參與設定</a><a href="#details"><span>ⓘ</span> 運作與限制</a></nav>
+  <div class="sidebar-bottom"><span class="local-dot"></span> 僅在這台電腦運作<small>設定不會上傳到 GitHub<br>不修改模型與工具能力</small><span class="version">v0.2.0 · ENVFACTS ONLY</span></div>
+</aside>
+<main id="overview">
+  <header><div class="breadcrumb">TokenEconomizer <span>/</span> 控制台</div><span class="mode-badge" id="mode">載入中</span></header>
+  <section class="heading"><div><p class="eyebrow">YOUR QUOTA, YOUR RULES</p><h1>讓額度決定啟用時機<span>。</span></h1><p class="intro">分別設定額度門檻，讓指定專案保留原本的工作方式。</p></div><div class="save-area"><span id="save-status" role="status">設定載入中</span><button class="primary" id="save">儲存設定 <span>↗</span></button></div></section>
+  <section class="notice" id="demo-notice"><span class="notice-mark">◉</span><div><strong id="notice-title">本機設定介面</strong><span id="notice-body">設定只寫入本機。尚未確認實際 Codex hook 整合。</span></div></section>
+  <section class="status-card"><div class="status-icon" id="status-icon">○</div><div class="status-copy"><p id="gate-title">讀取判斷結果…</p><span id="gate-reason">等待有效額度資料</span></div><div class="master-control"><label for="enabled">額度控制</label><label class="switch"><input id="enabled" type="checkbox" checked aria-label="啟用額度控制"><span></span></label></div></section>
+  <section class="quota-grid" aria-label="個別額度門檻">
+    <article class="quota-card"><div class="card-top"><span class="window-icon">◷</span><span class="window-name">5 小時額度<small>SHORT WINDOW</small></span><span class="remaining-label">剩餘比例</span></div><div class="quota-value"><strong id="remaining-5h">—</strong><span>%</span><span class="quota-caption" id="caption-5h">等待快照</span></div><div class="progress-track"><div id="bar-5h"></div><span id="marker-5h"></span></div><div class="threshold-top"><label for="threshold-5h">低於此比例時啟用</label><div class="number-wrap"><input id="threshold-5h" type="number" min="0" max="100" step="0.1" value="15"><span>%</span></div></div><input class="slider" id="slider-5h" type="range" min="0" max="100" step="0.1" value="15" aria-label="5 小時門檻滑桿"><div class="range-labels"><span>0% · 忽略此視窗</span><span>100%</span></div></article>
+    <article class="quota-card"><div class="card-top"><span class="window-icon weekly">▦</span><span class="window-name">每週額度<small>WEEKLY WINDOW</small></span><span class="remaining-label">剩餘比例</span></div><div class="quota-value"><strong id="remaining-weekly">—</strong><span>%</span><span class="quota-caption" id="caption-weekly">等待快照</span></div><div class="progress-track"><div id="bar-weekly"></div><span id="marker-weekly"></span></div><div class="threshold-top"><label for="threshold-weekly">低於此比例時啟用</label><div class="number-wrap"><input id="threshold-weekly" type="number" min="0" max="100" step="0.1" value="15"><span>%</span></div></div><input class="slider" id="slider-weekly" type="range" min="0" max="100" step="0.1" value="15" aria-label="每週門檻滑桿"><div class="range-labels"><span>0% · 忽略此視窗</span><span>100%</span></div></article>
+  </section>
+  <div class="rule-line"><span>↳</span><p><strong>任一視窗</strong>低於各自門檻就符合額度條件；剛好等於門檻時不啟用。排除的專案一律不參與。</p></div>
+  <section class="section-block" id="projects"><div class="section-heading"><div><p class="eyebrow">PROJECT PARTICIPATION</p><h2>哪些專案參與？</h2></div><span class="count" id="project-count">0 個已登錄</span></div><p class="muted">未列出的專案預設參與。關閉某個專案後，其資料夾與子資料夾都會被排除；其他位置的 worktree 請另外加入。</p><div class="project-list" id="project-list"></div><form id="add-project" class="add-project"><label><span>專案名稱</span><input id="project-name" placeholder="例如：研究主線" maxlength="80" required></label><label class="path-field"><span>專案資料夾完整路徑</span><input id="project-path" placeholder="/absolute/path/to/project" required></label><button type="submit" class="secondary">＋ 加入專案</button></form><p class="small-note">手動加入你要管理的路徑，不會掃描磁碟或讀取專案內容。新增後按「儲存設定」才會寫入。</p></section>
+  <section class="preview-card"><div><p class="eyebrow">CHECK BEFORE YOU APPLY</p><h2>試算某個專案</h2><p class="muted">使用目前畫面的設定試算，不會執行 TokenEconomizer。</p></div><form id="preview-form"><input id="preview-path" placeholder="貼上專案或子資料夾完整路徑" required aria-label="試算專案路徑"><button class="secondary" type="submit">試算 →</button></form><div id="preview-result" role="status">加入排除專案後，可在這裡確認是否會被跳過。</div></section>
+  <section class="demo-controls" id="demo-controls"><div><strong>模擬額度情境</strong><span>不讀取真實帳號</span></div><select id="scenario" aria-label="模擬額度情境"><option value="normal">額度充足 · 40% / 60%</option><option value="low5h">5h 偏低 · 14% / 60%</option><option value="lowweekly">Weekly 偏低 · 40% / 14%</option><option value="boundary">門檻邊界 · 15% / 15%</option><option value="reset">額度重設 · 100% / 100%</option><option value="stale">快照過期</option><option value="missing">缺少 Weekly 資料</option></select></section>
+  <section id="details" class="details"><h3>保留能力，只調整介入時機</h3><div class="pill-row"><span>✓ 保留全部工具</span><span>✓ 不更換主要模型</span><span>✓ Loop guard 關閉</span><span>✓ 無額外模型呼叫</span></div><p>設定會在下一次 hook 執行時重新讀取；額度快照最多有效 90 秒。已加入對話的經驗不會從歷史中移除。此介面顯示的是啟用資格，不能據此認定插件已安裝或已產生節省效果。</p><details><summary>本機設定與快照位置</summary><code id="settings-path"></code><code id="snapshot-path"></code></details></section>
+  <footer><span>TE QUOTA GATE</span><span>本機處理 · 無遙測 · 設定可隨時調整</span><button id="reload" class="text-button">重新載入已儲存設定</button></footer>
+</main><div id="toast" class="toast" role="alert" hidden></div>
+</body></html>

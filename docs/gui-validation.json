@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "mode": "synthetic-localhost",
+  "browser": "in-app browser",
+  "checks": {
+    "independentThresholdsSaved": {"fiveHour": 25, "weekly": 10, "passed": true},
+    "settingsSurviveReload": true,
+    "projectExcluded": "/demo/research-main",
+    "excludedChildVerified": "/demo/research-main/src",
+    "participatingProjectVerified": "/demo/experiment-copy/src",
+    "lowFiveHourScenarioEligible": true,
+    "nonDemoMissingQuotaInactive": true,
+    "nonDemoSimulationControlsHidden": true,
+    "browserErrorsOrWarnings": 0
+  },
+  "liveCodexIntegrationTested": false,
+  "liveAccountRead": false,
+  "pluginInstalled": false
+}

@@ -9,6 +9,7 @@ from .bundle import build
 from .policy import decide
 from .rpc import QuotaReadError, read_quota
 from .storage import read_snapshot, write_snapshot
+from .settings import configured_decision, read_settings
 
 
 def demo():
@@ -34,6 +35,8 @@ def parser():
     subs.add_parser("demo", help="offline synthetic threshold demonstration")
     ev = subs.add_parser("evaluate", help="read a sanitized snapshot without running a hook")
     ev.add_argument("--snapshot", required=True)
+    ev.add_argument("--settings", help="shared local settings file")
+    ev.add_argument("--project", help="absolute project/working-directory path")
     for name in ("capture", "watch"):
         c = subs.add_parser(name, help="read quotas, never start a model turn")
         c.add_argument("--codex", default="codex", help="CLI executable or absolute bundled binary path")
@@ -44,10 +47,18 @@ def parser():
     h.add_argument("--snapshot", required=True)
     h.add_argument("--bootstrap", required=True)
     h.add_argument("--bootstrap-sha256", required=True)
+    h.add_argument("--settings", help="shared local settings file; re-read on every hook")
     b = subs.add_parser("build", help="generate marketplace only; does not install")
     b.add_argument("--source", required=True, help="clean pinned upstream checkout")
     b.add_argument("--output", required=True, help="new local marketplace directory")
     b.add_argument("--snapshot", required=True, help="same absolute path used by capture/watch")
+    b.add_argument("--settings", help="shared settings path; defaults beside the snapshot")
+    gui = subs.add_parser("gui", help="local browser GUI; no plugin install or live account reads")
+    gui.add_argument("--settings", help="settings path; defaults to runtime/settings.json")
+    gui.add_argument("--snapshot", help="snapshot path; defaults to runtime/quota.json")
+    gui.add_argument("--demo", action="store_true", help="synthetic quotas in separate runtime/demo")
+    gui.add_argument("--port", type=int, default=0, help="loopback port, 0 selects an available port")
+    gui.add_argument("--open", action="store_true", help="open the local GUI in the default browser")
     return p
 
 
@@ -74,7 +85,8 @@ def main(argv=None):
             demo()
         elif args.action == "evaluate":
             try:
-                decision = decide(read_snapshot(args.snapshot))
+                decision = configured_decision(read_snapshot(args.snapshot),
+                                               read_settings(args.settings), cwd=args.project)
             except (OSError, ValueError):
                 print(json.dumps({"active": False, "reason": "snapshot_unavailable"}))
             else:
@@ -95,10 +107,17 @@ def main(argv=None):
         elif args.action == "hook":
             out, _ = run_hook(sys.stdin.buffer.read(), snapshot_path=args.snapshot,
                               bootstrap=args.bootstrap,
-                              expected_sha256=args.bootstrap_sha256)
+                              expected_sha256=args.bootstrap_sha256, settings_path=args.settings)
             print(json.dumps(out))
         elif args.action == "build":
-            print(json.dumps(build(args.source, args.output, args.snapshot), indent=2))
+            print(json.dumps(build(args.source, args.output, args.snapshot, args.settings), indent=2))
+        elif args.action == "gui":
+            from .gui import serve
+            if args.demo and (args.settings or args.snapshot):
+                raise ValueError("demo uses runtime/demo only; do not point it at live runtime files")
+            base = Path("runtime/demo" if args.demo else "runtime")
+            serve(args.settings or base / "settings.json", args.snapshot or base / "quota.json",
+                  demo=args.demo, port=args.port, open_browser=args.open)
         return 0
     except KeyboardInterrupt:
         return 130

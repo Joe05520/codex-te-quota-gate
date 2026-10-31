@@ -7,6 +7,7 @@ import subprocess
 import time
 
 from .policy import normalize
+from . import __version__
 
 
 class QuotaReadError(RuntimeError):
@@ -84,7 +85,7 @@ def read_quota(codex="codex", *, timeout=5.0, limit_id="codex", command=None):
 
     try:
         send({"method": "initialize", "id": 1, "params": {"clientInfo": {
-            "name": "te_quota_gate", "title": "TE Quota Gate", "version": "0.1.0"}}})
+            "name": "te_quota_gate", "title": "TE Quota Gate", "version": __version__}}})
         receive(1)
         send({"method": "initialized", "params": {}})
         send({"method": "account/rateLimits/read", "id": 2})

@@ -9,6 +9,7 @@ import sys
 from .policy import decide
 from .rpc import stop_process
 from .storage import read_snapshot
+from .settings import read_settings, project_block
 
 SAFE_ENV = {
     "TE_DISABLE": "0", "TE_MICROSKILLS": "envfacts", "TE_TOOLPRUNE": "off",
@@ -17,19 +18,27 @@ SAFE_ENV = {
 
 
 def run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
-             threshold=15.0, max_age=90.0, timeout=10.0, env=None):
+             threshold=15.0, max_age=90.0, timeout=10.0, env=None, settings_path=None):
     parent_env = os.environ if env is None else env
     truthy = ("1", "true", "yes", "on")
     if any(str(parent_env.get(k, "")).strip().lower() in truthy
            for k in ("TE_DISABLE", "TE_SIDECALL")):
         return {}, "explicitly_disabled"
     try:
-        decision = decide(read_snapshot(snapshot_path), threshold=threshold, max_age=max_age)
-        if not decision.active:
-            return {}, decision.reason
         data = json.loads(payload)
         if not isinstance(data, dict) or not data.get("session_id"):
             return {}, "invalid_hook_payload"
+        settings = read_settings(settings_path)
+        blocked = project_block(settings, data.get("cwd"))
+        if blocked:
+            return {}, blocked
+        thresholds = ({"threshold_5h": settings["threshold_5h"],
+                       "threshold_weekly": settings["threshold_weekly"]}
+                      if settings_path is not None else {})
+        decision = decide(read_snapshot(snapshot_path), threshold=threshold,
+                          max_age=max_age, **thresholds)
+        if not decision.active:
+            return {}, decision.reason
         bootstrap = Path(bootstrap).resolve(strict=True)
         if hashlib.sha256(bootstrap.read_bytes()).hexdigest() != expected_sha256:
             return {}, "upstream_bootstrap_changed"

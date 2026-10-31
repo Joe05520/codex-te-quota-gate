@@ -7,6 +7,9 @@ import shlex
 import shutil
 import subprocess
 import sys
+from . import __version__
+from .settings import read_settings
+from .storage import write_snapshot
 
 EVENTS = ("SessionStart", "UserPromptSubmit", "PostToolUse", "Stop", "SessionEnd")
 REVIEWED_REVISION = "e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9"
@@ -20,8 +23,10 @@ def source_hashes(source):
             for p in sorted(files)}
 
 
-def build(source, destination, snapshot):
+def build(source, destination, snapshot, settings=None):
     source, destination = Path(source).resolve(), Path(destination).resolve()
+    if destination.exists():
+        raise FileExistsError("marketplace destination already exists")
     revision = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"],
                                        text=True).strip()
     dirty = subprocess.check_output(["git", "-C", str(source), "status", "--porcelain"],
@@ -31,13 +36,24 @@ def build(source, destination, snapshot):
     if not (source / "tokeneconomizer/plugin/hook.py").is_file():
         raise ValueError("missing upstream package")
     hashes = source_hashes(source)
+    settings_path = (Path(settings).resolve() if settings is not None
+                     else Path(snapshot).resolve().parent / "settings.json")
+    if settings_path == Path(snapshot).resolve():
+        raise ValueError("settings and snapshot paths must differ")
+    if settings_path.is_relative_to(destination) or Path(snapshot).resolve().is_relative_to(destination):
+        raise ValueError("shared runtime files must be outside the generated marketplace")
+    if settings_path.exists():
+        read_settings(settings_path)
+    else:
+        write_snapshot(settings_path, read_settings())
     destination.mkdir(parents=True, exist_ok=False, mode=0o700)
     plugin = destination / "plugin"
     plugin.mkdir()
     shutil.copytree(Path(__file__).parent, plugin / "quota_gate",
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     config = {"source": str(source), "source_hashes": hashes,
-              "snapshot": str(Path(snapshot).resolve()), "threshold": 15, "max_age": 90,
+              "snapshot": str(Path(snapshot).resolve()), "settings": str(settings_path),
+              "threshold": 15, "max_age": 90,
               "bootstrap": str(source / "plugin/scripts/te_bootstrap.py"),
               "bootstrap_sha256": hashes["plugin/scripts/te_bootstrap.py"]}
     (plugin / "gate-config.json").write_text(json.dumps(config, indent=2) + "\n")
@@ -53,7 +69,7 @@ try:
         raise ValueError("upstream changed: regenerate and review the bundle")
     result, reason = run_hook(sys.stdin.buffer.read(), snapshot_path=cfg["snapshot"],
         bootstrap=cfg["bootstrap"], expected_sha256=cfg["bootstrap_sha256"],
-        threshold=cfg["threshold"], max_age=cfg["max_age"])
+        threshold=cfg["threshold"], max_age=cfg["max_age"], settings_path=cfg["settings"])
 except Exception:
     result = {}
 print(json.dumps(result))
@@ -66,7 +82,7 @@ print(json.dumps(result))
     (plugin / "hooks/codex-hooks.json").write_text(json.dumps({"hooks": hooks}, indent=2) + "\n")
     (plugin / ".codex-plugin").mkdir()
     (plugin / ".codex-plugin/plugin.json").write_text(json.dumps({
-        "name": "te-quota-gate", "version": "0.1.0", "license": "MIT",
+        "name": "te-quota-gate", "version": __version__, "license": "MIT",
         "description": "Quota-gated envfacts only. No tool pruning or loop guard.",
         "hooks": "./hooks/codex-hooks.json"}, indent=2) + "\n")
     (destination / ".claude-plugin").mkdir()

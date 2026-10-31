@@ -16,8 +16,22 @@ test_settings_override_and_separate_state (test_gate.RuntimeTests.test_settings_
 test_snapshot_permissions (test_gate.RuntimeTests.test_snapshot_permissions) ... ok
 test_upstream_failure_output_and_timeout (test_gate.RuntimeTests.test_upstream_failure_output_and_timeout) ... ok
 test_upstream_hash_mismatch (test_gate.RuntimeTests.test_upstream_hash_mismatch) ... ok
+test_demo_scenarios_and_live_mode_no_simulation (test_settings_gui.GuiTests.test_demo_scenarios_and_live_mode_no_simulation) ... ok
+test_host_origin_and_token_rejected (test_settings_gui.GuiTests.test_host_origin_and_token_rejected) ... ok
+test_invalid_existing_settings_not_overwritten (test_settings_gui.GuiTests.test_invalid_existing_settings_not_overwritten) ... ok
+test_invalid_input_never_changes_settings (test_settings_gui.GuiTests.test_invalid_input_never_changes_settings) ... ok
+test_page_and_assets (test_settings_gui.GuiTests.test_page_and_assets) ... ok
+test_save_persist_preview_and_conflict (test_settings_gui.GuiTests.test_save_persist_preview_and_conflict) ... ok
+test_demo_cli_rejects_live_file_overrides (test_settings_gui.SettingsTests.test_demo_cli_rejects_live_file_overrides) ... ok
+test_independent_thresholds_and_zero (test_settings_gui.SettingsTests.test_independent_thresholds_and_zero) ... ok
+test_invalid_settings (test_settings_gui.SettingsTests.test_invalid_settings) ... ok
+test_master_disable (test_settings_gui.SettingsTests.test_master_disable) ... ok
+test_project_exclusion_children_not_prefix_neighbors (test_settings_gui.SettingsTests.test_project_exclusion_children_not_prefix_neighbors) ... ok
+test_symlink_alias_and_duplicates (test_settings_gui.SettingsTests.test_symlink_alias_and_duplicates) ... ok
+test_generated_bundle_reads_same_gui_settings (test_settings_gui.SharedHookTests.test_generated_bundle_reads_same_gui_settings) ... ok
+test_live_settings_changes_without_rebuilding (test_settings_gui.SharedHookTests.test_live_settings_changes_without_rebuilding) ... ok
 
 ----------------------------------------------------------------------
-Ran 18 tests in 0.781s
+Ran 32 tests in 4.132s
 
 OK

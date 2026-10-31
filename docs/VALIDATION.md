@@ -1,10 +1,10 @@
-# Validation — 2026-10-31
+# Validation — v0.2.0, 2026-10-31
 
 ## Verified locally
 
 Environment: macOS, Python 3.12.5. No live Codex CLI was present on PATH.
 
-`python3 -m unittest discover -s tests -v`: **18 tests passed**. Parameterized subcases cover:
+`python3 -m unittest discover -s tests -v`: **32 tests passed**. Parameterized subcases cover:
 
 - Either-window trigger; 14%, 14.99%, exactly 15%, 0%, 100%.
 - Same synthetic session: sufficient → low 5h → reset/sufficient → low weekly.
@@ -22,8 +22,33 @@ Environment: macOS, Python 3.12.5. No live Codex CLI was present on PATH.
 - Emergency disable, nested-sidecall suppression, bootstrap digest mismatch.
 - Upstream nonzero exit, malformed/non-object output, hook timeout; hook stdout stays JSON.
 - Generated marketplace events, hook runner, source-change detection and revision rejection.
+- Independent 5-hour/weekly thresholds, equality boundaries, zero-to-disable-window semantics.
+- Excluded roots/children, similar-prefix neighbors, symlink aliases, and duplicate paths.
+- Settings changed without rebuilding: threshold, exclusion and re-enable affect forwarding.
+- Generated marketplace runner reads the same settings saved by the GUI backend.
+- GUI static files, state/save/preview APIs, persisted settings, stale-save rejection.
+- Invalid settings do not overwrite existing data; malformed settings keep hooks inactive.
+- GUI Host, Origin and per-process token checks; non-demo mode rejects simulation requests.
+- Demo CLI refuses explicit runtime file overrides to avoid overwriting live settings/snapshots.
+
+`node --check quota_gate/web/app.js`: passed.
 
 Evidence: [test output](offline-tests.txt), [threshold demo](demo.txt).
+
+## Browser GUI acceptance
+
+The actual localhost GUI was operated in the in-app browser using synthetic data:
+
+- Changed 5h threshold to 25 and weekly threshold to 10, saved, reloaded, and observed persistence.
+- Added a synthetic project, left participation off, and verified its child directory is excluded.
+- Added another synthetic project, enabled participation, and verified low-quota eligibility.
+- Switched to the low-5h demo scenario and observed the eligible state.
+- Verified non-demo mode displays unavailable quotas as inactive and hides simulation controls.
+- Browser warning/error log was empty at the checks.
+
+Screenshots: [threshold controls](gui-overview.png), [project controls and preview](gui-projects.png).
+These screenshots contain synthetic names and `/demo/` paths, not user repositories.
+This acceptance does not include native file dialogs, live quota reading, or actual Codex hooks.
 
 ## Verified against real upstream source, offline
 
@@ -53,5 +78,5 @@ No model API, subscription reset, plugin install, permission approval or private
 was used for the recorded local tests. The shipped reader can perform a live quota query only
 when the user explicitly runs `capture` or `watch` with their Codex client.
 
-GitHub Actions separately runs the offline suite on Linux/macOS with Python 3.10/3.12. See
+GitHub Actions separately runs the offline suite and JS syntax check on Linux/macOS with Python 3.10/3.12. See
 the repository Actions page for actual remote run outcomes; local evidence is not remote CI.

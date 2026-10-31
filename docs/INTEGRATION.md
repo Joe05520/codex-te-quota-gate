@@ -2,6 +2,44 @@
 
 This is an opt-in local integration, not an installer. Demo/test work never registers a plugin.
 
+## GUI and shared settings
+
+Run `python3 -m quota_gate gui --open` to edit local settings. Run with `--demo` for a
+separate synthetic runtime, without touching the regular settings/snapshot. The GUI never
+installs the hook or queries an account. Existing `capture` / `watch` commands populate the
+quota snapshot separately. The page clearly shows that live integration is unverified.
+
+`threshold_5h` and `threshold_weekly` are independently adjustable between 0 and 100. Zero
+disables triggering from that window; both quota windows must still be valid. Unknown windows
+are not treated as sufficient quota. `enabled=false` disables forwarding for all projects.
+
+Projects contain a display name, canonical absolute directory path, and `excluded` boolean.
+An excluded root also excludes descendants; a more specific participating entry does not
+override an excluded ancestor. Any matching exclusion wins. Entries at separate worktree or
+clone paths are independent. The GUI does not enumerate directories, read source files, or
+discover repositories automatically. Invalid configuration makes hooks inactive.
+
+Each hook checks the shared settings file at invocation. Changes do not retract context,
+delete learned state, or stop an already-running upstream fold. Matching uses hook `cwd`,
+not individual transcript contents: do not use this feature as redaction for a conversation
+that moves between multiple projects. Keep one project per conversation.
+
+The GUI listens only on loopback, uses a per-process API token and exact Origin/Host checks,
+and writes snapshots/settings atomically with mode 0600. Use one GUI process for each settings
+file; stale saves from another tab in the same process are rejected with a reload message.
+
+## Upgrading from v0.1.0
+
+Source checkout users can pull v0.2.0 and launch the GUI without installing anything.
+If you previously installed a generated v0.1.0 marketplace, its copied Python does not gain
+this functionality from a source pull alone. After review, generate a **new** marketplace
+directory with v0.2.0, specifying `--settings runtime/settings.json` and the same quota path.
+Manually re-register/re-add the plugin and review changed hooks in the target Codex environment.
+Do not enable old and new wrappers simultaneously. No automatic migration/trust is performed.
+
+After a v0.2.0 bundle is connected, threshold/project changes only need a GUI save; no rebuild.
+For custom paths, launch GUI with the same explicit `--settings` and `--snapshot` paths.
+
 ## Before connecting real hooks
 
 1. Review the generated hook file and `gate-config.json` locally. They contain your paths;

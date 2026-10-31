@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "threshold_5h": 25,
+  "threshold_weekly": 10,
+  "projects": [
+    {"name": "Example excluded project", "path": "/demo/research-main", "excluded": true},
+    {"name": "Example participating project", "path": "/demo/experiment-copy", "excluded": false}
+  ]
+}
