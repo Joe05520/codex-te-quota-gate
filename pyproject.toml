@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-te-quota-gate"
+version = "0.1.0"
+description = "Local quota gate for TokenEconomizer: envfacts only below 15% remaining"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+te-quota-gate = "quota_gate.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["quota_gate*"]

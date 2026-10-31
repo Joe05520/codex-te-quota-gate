@@ -1,0 +1,9 @@
+normal           5h= 40% weekly= 60% -> OFF    quota_sufficient
+low 5h           5h= 14% weekly= 60% -> ACTIVE below_threshold
+low weekly       5h= 40% weekly= 14% -> ACTIVE below_threshold
+both low         5h= 14% weekly= 14% -> ACTIVE below_threshold
+exactly 15       5h= 15% weekly= 15% -> OFF    quota_sufficient
+quota reset      5h=100% weekly=100% -> OFF    quota_sufficient
+stale            5h= 14% weekly= 60% -> OFF    stale_snapshot
+
+Synthetic data only. No login, network, plugin install, or model calls.

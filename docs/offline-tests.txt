@@ -1,0 +1,23 @@
+test_generated_bundle_and_changed_source (test_gate.BundleTests.test_generated_bundle_and_changed_source) ... ok
+test_age_and_reset (test_gate.PolicyTests.test_age_and_reset) ... ok
+test_bad_percentages_and_resets (test_gate.PolicyTests.test_bad_percentages_and_resets) ... ok
+test_normalize_prefers_bucket_and_sanitizes (test_gate.PolicyTests.test_normalize_prefers_bucket_and_sanitizes) ... ok
+test_threshold_and_or (test_gate.PolicyTests.test_threshold_and_or) ... ok
+test_unknown_missing_duplicate_and_wrong_bucket (test_gate.PolicyTests.test_unknown_missing_duplicate_and_wrong_bucket) ... ok
+test_window_identity_uses_duration_not_primary (test_gate.PolicyTests.test_window_identity_uses_duration_not_primary) ... ok
+test_real_subprocess_handshake_read_and_no_turns (test_gate.RpcTests.test_real_subprocess_handshake_read_and_no_turns) ... ok
+test_timeout_error_and_invalid_json (test_gate.RpcTests.test_timeout_error_and_invalid_json) ... ok
+test_cli_hook_stdout_only_json (test_gate.RuntimeTests.test_cli_hook_stdout_only_json) ... ok
+test_collector_failure_invalidates_previous_active_snapshot (test_gate.RuntimeTests.test_collector_failure_invalidates_previous_active_snapshot) ... ok
+test_emergency_disable_and_sidecall (test_gate.RuntimeTests.test_emergency_disable_and_sidecall) ... ok
+test_full_switch_cycle_same_session (test_gate.RuntimeTests.test_full_switch_cycle_same_session) ... ok
+test_missing_corrupt_stale_and_reset_never_forward (test_gate.RuntimeTests.test_missing_corrupt_stale_and_reset_never_forward) ... ok
+test_settings_override_and_separate_state (test_gate.RuntimeTests.test_settings_override_and_separate_state) ... ok
+test_snapshot_permissions (test_gate.RuntimeTests.test_snapshot_permissions) ... ok
+test_upstream_failure_output_and_timeout (test_gate.RuntimeTests.test_upstream_failure_output_and_timeout) ... ok
+test_upstream_hash_mismatch (test_gate.RuntimeTests.test_upstream_hash_mismatch) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.781s
+
+OK
