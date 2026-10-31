@@ -1,21 +1,228 @@
 # Codex TE Quota Gate
 
-Only allow **TokenEconomizer's `envfacts`** when either the **5-hour** or **weekly**
-Codex quota falls below its own configurable remaining-percentage threshold (default: 15%).
-Exclude selected project folders. Adjust everything through a local browser GUI.
-Keep all tools available and the loop guard off.
+[English](#english) | [繁體中文](#zh-tw)
 
-**Status: executable prototype, not installed on the author's Codex environment.**
-The local GUI, shared settings, policy, subprocess protocol and generated hook bridge are tested. Real desktop
-hook loading, live account integration, quota savings and research-answer quality are not
-established. This project is independent of Microsoft and OpenAI.
+<a id="english"></a>
 
-## 這是什麼？
+## English
+
+### Overview
+
+Codex TE Quota Gate adds local quota controls to
+[Microsoft TokenEconomizer](https://github.com/microsoft/TokenEconomizer). It allows only
+TokenEconomizer's **`envfacts`** when either the **5-hour** or **weekly** Codex quota falls
+below its own configurable remaining-percentage threshold (default: 15% each).
+You can exclude project folders and adjust the rules through a local browser GUI.
+All tools remain available, and the loop guard stays off.
+
+**Status: executable prototype; not installed in the author's Codex environment.**
+The GUI, shared settings, policy, subprocess protocol and generated hook bridge have been
+tested. Live account integration, real desktop hook loading, quota savings and answer-quality
+equivalence have not been established. This project is independent of Microsoft and OpenAI.
+It does not change your main model, install plugins automatically, or approve hooks for you.
+
+### v0.2.0: GUI, separate thresholds and project exclusions
+
+```bash
+python3 -m quota_gate gui --demo --open
+```
+
+On macOS, you can also double-click **`launch_demo.command`** in the project root.
+For regular local settings, run `python3 -m quota_gate gui --open` or double-click
+**`launch_gui.command`**. Python 3.10+ must already be installed; the launchers do not
+install software. The GUI binds only to `127.0.0.1`. It does not create a public website,
+connect an account, start the quota reader automatically, or install the plugin.
+
+![GUI: independent 5-hour and weekly thresholds, synthetic data](docs/gui-overview.png)
+
+- Set each threshold independently from **0–100%**, using a number field or slider.
+  Zero disables triggering from that window.
+- The rule is **OR**: either remaining percentage must be strictly below its own threshold.
+  Equality does not trigger activation.
+- Add an absolute project-folder path and toggle participation. Newly added projects are
+  excluded by default; save the settings to apply the change.
+- An excluded folder also excludes its descendants. Canonical-path matching avoids excluding
+  unrelated folders with a similar name prefix.
+- Unlisted projects participate by default. Clones or worktrees at other paths need separate entries.
+- The project preview evaluates the current, possibly unsaved settings **without running TokenEconomizer**.
+- Saving writes the shared settings file. Each subsequent hook reads it again; no bundle rebuild is needed.
+- The GUI does not scan project files. Settings stay local, and `runtime/` is ignored by git.
+
+![GUI: project participation and excluded-child preview, synthetic data](docs/gui-projects.png)
+
+Regular mode uses `runtime/settings.json` and `runtime/quota.json` by default. Demo mode uses
+the separate `runtime/demo/` directory. **Demo settings are not applied to regular mode.**
+If your existing bundle uses other runtime paths, pass the same files through `--settings`
+and `--snapshot` when launching the regular GUI.
+
+The table below uses the default thresholds of 15% / 15%. Custom thresholds are evaluated independently.
+
+| 5-hour remaining | Weekly remaining | Action |
+|---:|---:|---|
+| 40% | 60% | Do not call the TokenEconomizer hook |
+| 14% | 60% | Allow `envfacts` |
+| 40% | 14% | Allow `envfacts` |
+| 15% | 15% | Do not call the TokenEconomizer hook |
+| Stale data, a missing window, or a reset requiring a fresh read | — | Do not call the TokenEconomizer hook |
+
+The wrapper forces `microskills=envfacts`, `toolprune=off`, `loopguard=off` and `repomap=off`.
+It uses a dedicated upstream state directory to avoid mixing in facts learned by a separate
+TokenEconomizer installation. These choices reduce ways the plugin can affect capabilities;
+**they do not prove identical answer quality or guarantee quota savings**.
+
+### Try the offline demo first
+
+Python 3.10+ and the standard library are sufficient. Run from the project root; no pip installation is needed.
+
+```bash
+python3 -m quota_gate demo
+python3 -m unittest discover -s tests -v
+```
+
+These commands use synthetic data and temporary directories. They do not log in, read personal
+conversations, call a model, or install a plugin. See the [example output](docs/demo.txt).
+
+### Architecture
+
+```text
+Codex app-server: account/rateLimits/read
+       │  local quota reader, every 60 seconds by default; no thread/turn creation
+       ▼
+runtime/quota.json       (timestamps, billing bucket and quota windows only)
+runtime/settings.json    (thresholds and project participation shared by GUI / CLI / hooks)
+       │
+Codex hook → gate → project allowed, either quota below its threshold, and valid data?
+                       ├─ no  → {}
+                       └─ yes → pinned TokenEconomizer bootstrap
+                               envfacts only / dedicated state
+```
+
+Windows are identified by `windowDurationMins=300 / 10080`; the reader does not assume that
+`primary` is the 5-hour window. It prefers `rateLimitsByLimitId.codex` to avoid mixing other
+model or plan buckets. Some plans return only a weekly window; this version stays inactive
+instead of guessing what the missing window means.
+
+### Connect real hooks only after reviewing the prototype
+
+The collector and generated shell hooks currently support macOS/Linux. Integration requires
+a working Codex CLI signed in to an existing ChatGPT account, and manual hook review/trust.
+No API key is required. Whether the desktop app loads the same plugin/hook environment must
+be checked on the target version.
+
+#### 1. Read quotas without connecting the plugin
+
+Confirm that `codex` runs. If it is not on PATH, provide the verified CLI's absolute path.
+This tool does not download the CLI, locate credentials, log in, refresh login, or switch accounts.
+
+```bash
+python3 -m quota_gate capture --codex /absolute/path/to/codex --output runtime/quota.json
+python3 -m quota_gate evaluate --snapshot runtime/quota.json --settings runtime/settings.json --project /absolute/path/to/project
+```
+
+`capture` sends only `initialize`, `initialized` and `account/rateLimits/read`. Server-initiated
+requests receive an unsupported-action response; the reader does not approve permissions,
+purchase credits, or consume quota resets. A failed read invalidates the snapshot.
+Its stdout shows quota eligibility under the default thresholds, not the raw account response.
+For custom thresholds/projects, use the GUI or `evaluate` with `--settings` and `--project`.
+Save settings in the GUI, or let `build` create the defaults, before running that `evaluate` command.
+
+#### 2. Get the reviewed upstream revision and generate a local marketplace
+
+```bash
+git clone https://github.com/microsoft/TokenEconomizer.git ../TokenEconomizer
+git -C ../TokenEconomizer checkout --detach e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9
+python3 scripts/check_upstream.py --source ../TokenEconomizer
+python3 -m quota_gate build --source ../TokenEconomizer --output local-marketplace --snapshot runtime/quota.json --settings runtime/settings.json
+```
+
+`build` requires a clean upstream checkout at the specified commit and generates hooks,
+manifests and local path settings in a new directory. **It does not install anything, change
+Codex config, or approve hooks.** Each generated-hook invocation compares the upstream Python
+source SHA-256 hashes and stops forwarding if files were added, removed or changed.
+This guards against unreviewed updates; it is not a security certification of unknown code.
+Keep the upstream clone and the selected Python executable at their configured locations.
+
+#### 3. Review and connect manually
+
+Read [integration and rollback](docs/INTEGRATION.md), especially the standalone upstream plugin
+and existing deny-list notes. After reviewing the generated
+`local-marketplace/plugin/hooks/codex-hooks.json`, use:
+
+```bash
+codex plugin marketplace add "$PWD/local-marketplace"
+codex plugin add te-quota-gate@te-quota-gate
+```
+
+Review and trust the hook yourself when Codex asks; this tool does not approve it for you.
+Keep the quota reader running in another terminal:
+
+```bash
+python3 -m quota_gate watch --codex /absolute/path/to/codex --output runtime/quota.json
+```
+
+Ctrl+C stops the reader and invalidates the snapshot. No launchd job, scheduled task or
+persistent background service is configured. After a crash, snapshots expire within 90 seconds;
+a snapshot whose `resetsAt` has passed expires immediately. With the default 60-second refresh,
+crossing a threshold is detected at a subsequent refresh and hook invocation, not instantly.
+
+### Capability tradeoffs and limitations
+
+- Does not disable image viewing, subagents, the web or other tools, or change the main model/reasoning effort.
+- `envfacts` can still inject outdated operational advice. Zero quality loss has not been proven.
+- The wrapper and selected conservative profile do not initiate model calls, but injected text
+  still becomes part of later model input.
+- When quotas are sufficient, upstream hooks are not forwarded. The gate and quota reader still run.
+- Previously injected text remains in conversation history after quotas recover. Start a new
+  conversation if you need context without those facts.
+- An allowed upstream hook can start a detached fold; quota recovery does not terminate work already started.
+- Facts are mainly injected at an eligible SessionStart. Crossing the threshold mid-session
+  can allow later hooks, but does not guarantee immediate fact injection or savings.
+- Does not change or restore tool deny lists left by a previous standalone TokenEconomizer installation.
+- Project exclusions match each hook's `cwd`. They do not erase learned state, retract context,
+  or stop existing folds. Keep one project per conversation; this is not a redaction or privacy-isolation
+  tool for mixed-project transcripts.
+- The full distiller and loop guard stay disabled. The upstream 18–31% cost-reduction claim
+  should not be applied to this conservative profile.
+- Both quota windows must be valid. Unknown data, the wrong bucket, invalid numbers, stale data
+  and read failures keep forwarding inactive.
+- Only the selected `codex` bucket is managed. Before switching account/workspace/billing bucket,
+  stop the reader, remove the snapshot and restart in the matching target environment.
+  Do not share runtime data between accounts.
+- Does not bypass exhausted subscription limits, replenish quota or enable automatic payment.
+
+### Validation, references and license
+
+See the [validation report](docs/VALIDATION.md) and [data flow and permissions](docs/PRIVACY.md).
+CI runs offline tests without accounts, secrets or model fees. Existing v0.1.0 users should read
+[the upgrade instructions](docs/INTEGRATION.md#upgrading-from-v010): an already-copied old bundle
+does not automatically gain GUI settings support.
+
+- [OpenAI app-server: initialization and quota reads](https://learn.chatgpt.com/docs/app-server)
+- [OpenAI hooks: user review and trust](https://learn.chatgpt.com/docs/hooks)
+- [TokenEconomizer configuration and uninstall instructions](https://github.com/microsoft/TokenEconomizer/blob/e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9/plugin/README.md)
+- [TokenEconomizer hook dispatcher](https://github.com/microsoft/TokenEconomizer/blob/e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9/tokeneconomizer/plugin/hook.py)
+
+This wrapper uses the MIT license. Upstream TokenEconomizer remains under its own Apache-2.0
+license; its implementation is not redistributed here.
+
+
+---
+
+<a id="zh-tw"></a>
+
+## 繁體中文
+
+**狀態：可執行原型，尚未安裝到作者的 Codex 環境。**
+本機 GUI、共用設定、判斷邏輯、子程序通訊與產生的 hook 包裝層已測試；
+真實帳號整合、桌面 hook 載入、額度節省與回答品質等同尚未確立。
+本專案獨立於 Microsoft 與 OpenAI。
+
+### 這是什麼？
 
 這個本機工具替 [Microsoft TokenEconomizer](https://github.com/microsoft/TokenEconomizer)
 加上額度門檻。它不會更換你的主要模型，也不會自動安裝或核准任何插件。
 
-## v0.2.0：GUI、兩個獨立門檻與專案排除
+### v0.2.0：GUI、兩個獨立門檻與專案排除
 
 ```bash
 python3 -m quota_gate gui --demo --open
@@ -57,7 +264,7 @@ macOS 也可雙擊專案根目錄的 **`launch_demo.command`**。正式本機設
 插件資料使用獨立目錄，避免混入另一套 TokenEconomizer 先前學到的內容。
 這減少能力受影響的途徑，**不代表已證明品質完全相同，也不保證可以省多少額度**。
 
-## 先看離線展示
+### 先看離線展示
 
 Python 3.10+，只有標準函式庫。從此專案根目錄執行，無需 pip 安裝：
 
@@ -69,7 +276,7 @@ python3 -m unittest discover -s tests -v
 這兩個命令使用合成資料和臨時目錄，不登入、不讀取個人對話、不呼叫模型，
 也不安裝插件。範例輸出見 [離線展示](docs/demo.txt)。
 
-## 運作架構
+### 運作架構
 
 ```text
 Codex app-server: account/rateLimits/read
@@ -88,13 +295,13 @@ Codex hook → gate → 此專案未排除，且任一剩餘低於對應門檻�
 優先使用 `rateLimitsByLimitId.codex`，避免混用其他模型或方案的 bucket。
 某些方案只回傳 weekly；本版會停用，**不猜測缺失視窗的意思**。
 
-## 在你看過原型後，才進行實際整合
+### 在你看過原型後，才進行實際整合
 
 目前 collector 與產生的 shell hook 限 macOS/Linux。實際整合需要可用的 Codex CLI
 （登入既有 ChatGPT 帳號）以及你手動信任 hook。不需要 API key。
 桌面 App 是否載入同一個插件／hook 環境，必須在目標版本另外確認。
 
-### 1. 只讀取額度，尚不接入插件
+#### 1. 只讀取額度，尚不接入插件
 
 先確認 `codex` 可執行。若它不在 PATH，使用你確認過的 CLI 完整路徑；本工具不會
 自行下載 CLI、尋找登入憑證、登入、刷新登入或更換帳號。
@@ -110,7 +317,7 @@ python3 -m quota_gate evaluate --snapshot runtime/quota.json --settings runtime/
 已自訂門檻／專案時以 GUI 或帶 `--settings --project` 的 `evaluate` 為準。
 先開 GUI 儲存設定，或由 `build` 建立預設設定後，再執行上面的 `evaluate`。
 
-### 2. 取得經查核的上游版本，產生可審閱的本機 marketplace
+#### 2. 取得經查核的上游版本，產生可審閱的本機 marketplace
 
 ```bash
 git clone https://github.com/microsoft/TokenEconomizer.git ../TokenEconomizer
@@ -124,7 +331,7 @@ python3 -m quota_gate build --source ../TokenEconomizer --output local-marketpla
 hook，都會比對上游 Python 程式的 SHA-256；上游新增、刪除或修改程式時停止轉交。
 這是更新防護，不是對未知上游程式的安全認證。保留上游 clone 和所用 Python 的位置。
 
-### 3. 手動檢閱並接入
+#### 3. 手動檢閱並接入
 
 先閱讀 [整合與回復說明](docs/INTEGRATION.md)，尤其是獨立原版插件與既有 deny list。
 確認產生的 `local-marketplace/plugin/hooks/codex-hooks.json` 後，才使用：
@@ -145,7 +352,7 @@ Ctrl+C 停止 reader，並使快照無效。不設定 launchd、排程工作或�
 崩潰時，快照最晚在 90 秒後失效；已到 `resetsAt` 的快照立即失效。
 預設 60 秒更新意味門檻跨越並非即時偵測，正常情況約在下一次更新與 hook 時點生效。
 
-## 能力代價與重要限制
+### 能力代價與重要限制
 
 - 不關閉圖片檢視、子代理、網路或其他工具，也不改主要模型／reasoning effort。
 - `envfacts` 仍會把學到的操作經驗加入上下文，經驗可能過時；沒有「品質零損失」證明。
@@ -164,7 +371,7 @@ Ctrl+C 停止 reader，並使快照無效。不設定 launchd、排程工作或�
   先停止 reader 並移除快照，再以同一目標環境重新啟動；不跨帳號共用 runtime。
 - 不對已耗盡的訂閱額度提供繞過、補充或自動付費方式。
 
-## 驗證與來源
+### 驗證與來源
 
 見 [驗證報告](docs/VALIDATION.md) 與 [資料流和權限](docs/PRIVACY.md)。
 CI 僅執行離線測試，不需要帳號、密鑰或模型費用。v0.1.0 使用者請參考
@@ -175,5 +382,5 @@ CI 僅執行離線測試，不需要帳號、密鑰或模型費用。v0.1.0 使�
 - [TokenEconomizer 設定與卸載](https://github.com/microsoft/TokenEconomizer/blob/e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9/plugin/README.md)
 - [TokenEconomizer hook dispatcher](https://github.com/microsoft/TokenEconomizer/blob/e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9/tokeneconomizer/plugin/hook.py)
 
-MIT license for this wrapper. Upstream TokenEconomizer remains under its own Apache-2.0 license;
-its implementation is not redistributed here.
+此包裝工具採用 MIT 授權。上游 TokenEconomizer 維持其 Apache-2.0 授權；
+本專案不重新散布上游實作。
