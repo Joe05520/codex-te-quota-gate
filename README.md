@@ -15,11 +15,18 @@ below its own configurable remaining-percentage threshold (default: 15% each).
 You can exclude project folders and adjust the rules through a local browser GUI.
 All tools remain available, and the loop guard stays off.
 
-**Status: executable prototype; not installed in the author's Codex environment.**
+**Status: executable prototype; local installation and live quota reads verified.**
 The GUI, shared settings, policy, subprocess protocol and generated hook bridge have been
-tested. Live account integration, real desktop hook loading, quota savings and answer-quality
-equivalence have not been established. This project is independent of Microsoft and OpenAI.
+tested. The bundled Codex CLI discovers all five hooks without load errors or timeout warnings.
+Hook trust and execution in actual conversations, quota savings and answer-quality equivalence
+have not been established. This project is independent of Microsoft and OpenAI.
 It does not change your main model, install plugins automatically, or approve hooks for you.
+
+### v0.2.1: SessionEnd compatibility fix
+
+The generated SessionEnd hook uses Codex's 3-second limit, with a 2-second upstream execution
+budget. Other hooks retain their 15-second host limit. Rebuild and reinstall an existing
+local bundle, then review its hooks again. Shared thresholds and project exclusions are preserved.
 
 ### v0.2.0: GUI, separate thresholds and project exclusions
 
@@ -212,15 +219,22 @@ license; its implementation is not redistributed here.
 
 ## 繁體中文
 
-**狀態：可執行原型，尚未安裝到作者的 Codex 環境。**
+**狀態：可執行原型，已驗證本機安裝與真實額度讀取。**
 本機 GUI、共用設定、判斷邏輯、子程序通訊與產生的 hook 包裝層已測試；
-真實帳號整合、桌面 hook 載入、額度節省與回答品質等同尚未確立。
+內附 Codex CLI 能找到全部五個 hooks，沒有載入錯誤或逾時警告。
+hooks 的信任與真實對話執行、額度節省與回答品質等同尚未確立。
 本專案獨立於 Microsoft 與 OpenAI。
 
 ### 這是什麼？
 
 這個本機工具替 [Microsoft TokenEconomizer](https://github.com/microsoft/TokenEconomizer)
 加上額度門檻。它不會更換你的主要模型，也不會自動安裝或核准任何插件。
+
+### v0.2.1：SessionEnd 相容性修正
+
+產生的 SessionEnd hook 使用 Codex 的 3 秒限制，上游執行預算為 2 秒；其他 hooks 維持
+15 秒的主程式限制。既有本機套件需要重新建置、安裝並審核 hooks。共用的額度門檻與專案
+排除設定會保留。
 
 ### v0.2.0：GUI、兩個獨立門檻與專案排除
 

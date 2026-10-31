@@ -35,3 +35,9 @@ test_live_settings_changes_without_rebuilding (test_settings_gui.SharedHookTests
 Ran 32 tests in 4.132s
 
 OK
+
+2026-11-01 v0.2.1 local rerun
+python3 -m unittest discover -s tests -v
+Ran 33 tests in 6.315s
+OK
+Includes test_session_end_bounds_slow_upstream_without_host_clamping.

@@ -1,10 +1,10 @@
-# Validation — v0.2.0, 2026-10-31
+# Validation — v0.2.1, 2026-11-01
 
 ## Verified locally
 
-Environment: macOS, Python 3.12.5. No live Codex CLI was present on PATH.
+Environment: macOS, Python 3.12.5. Offline tests do not require Codex on PATH.
 
-`python3 -m unittest discover -s tests -v`: **32 tests passed**. Parameterized subcases cover:
+`python3 -m unittest discover -s tests -v`: **33 tests passed**. Parameterized subcases cover:
 
 - Either-window trigger; 14%, 14.99%, exactly 15%, 0%, 100%.
 - Same synthetic session: sufficient → low 5h → reset/sufficient → low weekly.
@@ -22,6 +22,7 @@ Environment: macOS, Python 3.12.5. No live Codex CLI was present on PATH.
 - Emergency disable, nested-sidecall suppression, bootstrap digest mismatch.
 - Upstream nonzero exit, malformed/non-object output, hook timeout; hook stdout stays JSON.
 - Generated marketplace events, hook runner, source-change detection and revision rejection.
+- SessionEnd host limit is 3 seconds; a real sleeping upstream is terminated within that limit.
 - Independent 5-hour/weekly thresholds, equality boundaries, zero-to-disable-window semantics.
 - Excluded roots/children, similar-prefix neighbors, symlink aliases, and duplicate paths.
 - Settings changed without rebuilding: threshold, exclusion and re-enable affect forwarding.
@@ -48,7 +49,8 @@ The actual localhost GUI was operated in the in-app browser using synthetic data
 
 Screenshots: [threshold controls](gui-overview.png), [project controls and preview](gui-projects.png).
 These screenshots contain synthetic names and `/demo/` paths, not user repositories.
-This acceptance does not include native file dialogs, live quota reading, or actual Codex hooks.
+This synthetic browser acceptance does not establish actual hook execution. Separate local integration
+checks below cover live quota reading and hook discovery.
 
 ## Verified against real upstream source, offline
 
@@ -66,16 +68,24 @@ Evidence: [sanitized upstream check](upstream-check.json).
 The active-branch contract is exercised with a fake upstream bootstrap, not a paid agent.
 The source check does not establish that real session logs will yield useful envfacts.
 
+## Local integration check, 2026-11-01
+
+- Installed v0.2.1 through the bundled Codex CLI plugin commands.
+- Live `account/rateLimits/read` returned the selected quota windows without creating a model turn.
+- `hooks/list` found five enabled hooks, with no warnings or errors; SessionEnd reports 3 seconds.
+- Existing shared settings were preserved. Hook trust was not changed.
+- Machine paths, account/quota values and installation receipts remain local and are not published.
+
 ## Not established
 
-- Live `account/rateLimits/read` authentication in the target environment.
-- Successful manual marketplace installation, desktop hook trust, or a live desktop session.
+- Desktop hook trust or execution in a live desktop conversation.
 - Real envfacts learning and later injection from actual user sessions.
 - Quota savings, latency of the real account endpoint, quality equivalence, or research utility.
 - Windows integration or accounts that lack a 5-hour quota window.
 
 No model API, subscription reset, plugin install, permission approval or private research data
-was used for the recorded local tests. The shipped reader can perform a live quota query only
+was used for the offline test suite. The separate authorized integration check installed the plugin
+and read live quotas, without approving hook trust or starting a model turn. The shipped reader can perform a live quota query only
 when the user explicitly runs `capture` or `watch` with their Codex client.
 
 GitHub Actions separately runs the offline suite and JS syntax check on Linux/macOS with Python 3.10/3.12. See

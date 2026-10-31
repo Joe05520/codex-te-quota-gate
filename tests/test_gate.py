@@ -173,6 +173,14 @@ print(json.dumps({"additionalContext": "synthetic envfacts", "seen": data,
         self.assertEqual(json.loads(result.stdout), {})
         self.assertEqual(result.stderr, b"")
 
+    def test_session_end_bounds_slow_upstream_without_host_clamping(self):
+        write_snapshot(self.snapshot, sample(14, 60))
+        self.bootstrap.write_text("import time; time.sleep(10)")
+        started = time.monotonic()
+        answer, reason = self.call({"session_id": "synthetic", "hook_event_name": "SessionEnd"})
+        self.assertEqual((answer, reason), ({}, "upstream_failed"))
+        self.assertLess(time.monotonic() - started, 3)
+
     def test_snapshot_permissions(self):
         write_snapshot(self.snapshot, sample(14, 60))
         self.assertEqual(self.snapshot.stat().st_mode & 0o777, 0o600)
@@ -239,6 +247,9 @@ class BundleTests(unittest.TestCase):
             self.assertFalse(result["installed"])
             hooks = json.loads((dest / "plugin/hooks/codex-hooks.json").read_text())
             self.assertEqual(set(hooks["hooks"]), set(bundle.EVENTS))
+            for event, entries in hooks["hooks"].items():
+                self.assertEqual(entries[0]["hooks"][0]["timeout"],
+                                 3 if event == "SessionEnd" else 15)
             self.assertIn("PLUGIN_ROOT", hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"])
             write_snapshot(snap, sample(14, 60))
             for changed in (False, True):

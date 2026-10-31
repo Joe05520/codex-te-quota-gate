@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codex-te-quota-gate"
-version = "0.2.0"
+version = "0.2.1"
 description = "Local quota gate for TokenEconomizer: envfacts only below 15% remaining"
 requires-python = ">=3.10"
 license = {text = "MIT"}

@@ -28,6 +28,9 @@ def run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
         data = json.loads(payload)
         if not isinstance(data, dict) or not data.get("session_id"):
             return {}, "invalid_hook_payload"
+        # Codex caps SessionEnd at 3 seconds. Reserve time for startup and cleanup.
+        if data.get("hook_event_name") == "SessionEnd":
+            timeout = min(timeout, 2.0)
         settings = read_settings(settings_path)
         blocked = project_block(settings, data.get("cwd"))
         if blocked:

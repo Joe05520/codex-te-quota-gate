@@ -76,7 +76,8 @@ print(json.dumps(result))
 ''')
     command = (shlex.quote(sys.executable)
                + ' "${PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/run_hook.py"')
-    hooks = {event: [{"hooks": [{"type": "command", "command": command, "timeout": 15}]}]
+    hooks = {event: [{"hooks": [{"type": "command", "command": command,
+                               "timeout": 3 if event == "SessionEnd" else 15}]}]
              for event in EVENTS}
     (plugin / "hooks").mkdir()
     (plugin / "hooks/codex-hooks.json").write_text(json.dumps({"hooks": hooks}, indent=2) + "\n")
