@@ -165,6 +165,15 @@ print(json.dumps({"additionalContext": "synthetic envfacts", "seen": data,
             self.assertEqual(self.call(timeout=0.1)[0], {})
             self.assertLess(time.monotonic() - started, 2)
 
+    def test_upstream_progress_lines_preserve_final_context(self):
+        write_snapshot(self.snapshot, sample(14, 60))
+        self.bootstrap.write_text('import json; print(json.dumps({"type":"progress","message":"notice"})); print(json.dumps({"additionalContext":"synthetic context"}))')
+        answer, reason = self.call()
+        self.assertEqual(answer, {"additionalContext": "synthetic context"})
+        self.assertEqual(reason, "forwarded_envfacts")
+        receipt = json.loads((self.snapshot.parent / "hook-activity.json").read_text())
+        self.assertTrue(receipt["lastContext"]["contextEmitted"])
+
     def test_cli_hook_stdout_only_json(self):
         result = subprocess.run([sys.executable, "-m", "quota_gate", "hook", "--snapshot",
                                  str(self.snapshot), "--bootstrap", str(self.bootstrap),

@@ -5,11 +5,13 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 
 from .policy import decide
 from .rpc import stop_process
 from .storage import read_snapshot
 from .settings import read_settings, project_block
+from .activity import record_activity
 
 SAFE_ENV = {
     "TE_DISABLE": "0", "TE_MICROSKILLS": "envfacts", "TE_TOOLPRUNE": "off",
@@ -19,6 +21,16 @@ SAFE_ENV = {
 
 def run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
              threshold=15.0, max_age=90.0, timeout=10.0, env=None, settings_path=None):
+    started = time.monotonic()
+    answer, reason = _run_hook(payload, snapshot_path=snapshot_path, bootstrap=bootstrap,
+        expected_sha256=expected_sha256, threshold=threshold, max_age=max_age,
+        timeout=timeout, env=env, settings_path=settings_path)
+    record_activity(snapshot_path, payload, answer, reason, time.monotonic() - started)
+    return answer, reason
+
+
+def _run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
+              threshold=15.0, max_age=90.0, timeout=10.0, env=None, settings_path=None):
     parent_env = os.environ if env is None else env
     truthy = ("1", "true", "yes", "on")
     if any(str(parent_env.get(k, "")).strip().lower() in truthy
@@ -63,8 +75,16 @@ def run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
         out, _ = proc.communicate(payload, timeout=timeout)
         if proc.returncode != 0 or len(out) > 2_000_000:
             return {}, "upstream_failed"
-        answer = json.loads(out)
+        # Upstream may emit JSON progress lines before the final hook object.
+        messages = [json.loads(line) for line in out.splitlines() if line.strip()]
+        if not messages:
+            return {}, "invalid_upstream_output"
+        if any(not isinstance(m, dict) or m.get("type") != "progress" for m in messages[:-1]):
+            return {}, "invalid_upstream_output"
+        answer = messages[-1]
         if not isinstance(answer, dict):
+            return {}, "invalid_upstream_output"
+        if answer.get("type") == "progress":
             return {}, "invalid_upstream_output"
         return answer, "forwarded_envfacts"
     except (OSError, ValueError, subprocess.TimeoutExpired):

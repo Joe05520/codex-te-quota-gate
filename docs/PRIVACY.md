@@ -50,3 +50,12 @@
 Only wrapper source, synthetic tests, documentation and offline validation evidence belong in
 the public repository. Never commit runtime snapshots, generated marketplaces, upstream learned
 state, tokens, account identifiers, private research files, or real conversation logs.
+
+## v0.3.0 local observation
+
+The menu-bar monitor reads only quota snapshots, shared settings and sanitized hook receipts.
+It performs the read-only `hooks/list` and quota RPCs, never a turn or model request. Receipts
+retain time/event/result/duration/context-present metadata, 40 recent items and recorded counts.
+They exclude prompts, answers, injected text, session IDs and project paths; writes are private
+and best effort. Existing upstream envfacts storage remains governed by the upstream profile.
+The native app uses the existing Python installation and adds no login item.

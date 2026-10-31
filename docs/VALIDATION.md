@@ -1,10 +1,10 @@
-# Validation — v0.2.1, 2026-11-01
+# Validation — v0.3.0, 2026-11-01
 
 ## Verified locally
 
 Environment: macOS, Python 3.12.5. Offline tests do not require Codex on PATH.
 
-`python3 -m unittest discover -s tests -v`: **33 tests passed**. Parameterized subcases cover:
+`python3 -m unittest discover -s tests -v`: **40 tests passed**. Parameterized subcases cover:
 
 - Either-window trigger; 14%, 14.99%, exactly 15%, 0%, 100%.
 - Same synthetic session: sufficient → low 5h → reset/sufficient → low weekly.
@@ -90,3 +90,18 @@ when the user explicitly runs `capture` or `watch` with their Codex client.
 
 GitHub Actions separately runs the offline suite and JS syntax check on Linux/macOS with Python 3.10/3.12. See
 the repository Actions page for actual remote run outcomes; local evidence is not remote CI.
+
+## v0.3.0 additional checks
+
+- Sanitized bounded receipts distinguish skipped/forwarded/context-returned, never persist payload data.
+- Receipt write failures do not change hook results; absent observations remain unknown.
+- Native backend demo cannot overwrite live runtime and exits when its parent closes stdin.
+- Read-only hooks RPC reports trust and strips command/source metadata.
+- Upstream progress JSON lines preserve the final additionalContext result.
+- Native Swift/AppKit/SwiftUI app compiled locally and ad-hoc signature verified.
+
+Real low-quota forwarding after user trust and actual context consumption remain unproven.
+
+The existing trusted v0.2.1 plugin was intentionally retained during a live threshold crossing.
+The native monitor can observe eligibility/trust immediately; detailed receipts require the
+explicit v0.3.0 upgrade and a new hook review. No live execution was synthesized for evidence.

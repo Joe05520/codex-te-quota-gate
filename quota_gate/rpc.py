@@ -1,6 +1,7 @@
 """Read quotas through documented Codex app-server stdio, without starting turns."""
 import json
 import os
+from pathlib import Path
 import selectors
 import signal
 import subprocess
@@ -37,6 +38,29 @@ def stop_process(proc):
 
 
 def read_quota(codex="codex", *, timeout=5.0, limit_id="codex", command=None):
+    return normalize(_read(codex, "account/rateLimits/read", timeout=timeout,
+                           command=command), limit_id=limit_id)
+
+
+def read_hooks(codex="codex", *, cwd=None, timeout=5.0, command=None):
+    result = _read(codex, "hooks/list", params={"cwds": [cwd or os.getcwd()]},
+                   timeout=timeout, command=command)
+    hooks = [h for e in result.get("data", []) for h in e.get("hooks", [])
+             if h.get("pluginId") == "te-quota-gate@te-quota-gate"]
+    problems = sum(len(e.get("errors", [])) + len(e.get("warnings", []))
+                   for e in result.get("data", []))
+    trusted = sum(h.get("enabled") is True and h.get("trustStatus") == "trusted" for h in hooks)
+    versions = {Path(h["sourcePath"]).parent.parent.name for h in hooks
+                if isinstance(h.get("sourcePath"), str)}
+    return {"observedAt": time.time(), "count": len(hooks), "trusted": trusted,
+            "version": next(iter(versions)) if len(versions) == 1 else None,
+            "ready": len(hooks) == 5 and trusted == 5 and problems == 0,
+            "problems": problems}
+
+
+def _read(codex, method, *, params=None, timeout=5.0, command=None):
+    if method not in ("account/rateLimits/read", "hooks/list"):
+        raise ValueError("read-only diagnostic method required")
     if os.name != "posix":
         raise QuotaReadError("live quota collector currently supports macOS/Linux only")
     # command is injectable for protocol tests; the public CLI accepts a binary path only.
@@ -88,8 +112,11 @@ def read_quota(codex="codex", *, timeout=5.0, limit_id="codex", command=None):
             "name": "te_quota_gate", "title": "TE Quota Gate", "version": __version__}}})
         receive(1)
         send({"method": "initialized", "params": {}})
-        send({"method": "account/rateLimits/read", "id": 2})
-        return normalize(receive(2), limit_id=limit_id)
+        request = {"method": method, "id": 2}
+        if params is not None:
+            request["params"] = params
+        send(request)
+        return receive(2)
     finally:
         selector.close()
         stop_process(proc)

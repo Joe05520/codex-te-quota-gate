@@ -22,6 +22,38 @@ Hook trust and execution in actual conversations, quota savings and answer-quali
 have not been established. This project is independent of Microsoft and OpenAI.
 It does not change your main model, install plugins automatically, or approve hooks for you.
 
+### v0.3.0: native macOS menu bar and local execution receipts
+
+The native **TE Quota Bar** shows separate 5-hour/weekly rings, reset times, live hook trust,
+quota eligibility, and the last observed hook, upstream forwarding and emitted context.
+**Eligible does not mean running. Forwarded does not mean context was available. Context
+returned does not prove that the host consumed it or that quota was saved.**
+
+```bash
+python3 scripts/build_macos.py --output "/absolute/path/TE Quota Bar.app"
+```
+
+Build on macOS 13+ with Xcode command-line tools and the Python environment used by this
+project. The local build records that Python executable; Python is not embedded. On this
+installation the app uses `~/Library/Application Support/TE Quota Gate/runtime/` and the
+bundled Codex CLI in `/Applications/ChatGPT.app`. Launch the app, then click **TE** in the
+menu bar. The initial status window can be closed while the menu-bar item stays available.
+The app refreshes local display data every 3 seconds and read-only Codex diagnostics about
+every 60 seconds. It reuses fresh quota snapshots and an existing GUI on port 8766, or starts
+its own reader/GUI. Closing the app stops its monitor; independently started readers/GUI remain.
+It adds no login item, model call or permission approval.
+
+To observe executions, rebuild/reinstall the v0.3.0 plugin bundle as well as the app, and review
+its updated hooks. Existing v0.2.x hooks do not write receipts. Each new hook records only
+allowlisted event name, time, result, duration and whether context was returned. The bounded
+`hook-activity.json` retains 40 recent receipts and cumulative recorded counts; it contains
+no prompt, answer, injected content, session ID or project path. Recording is best effort and
+never blocks the hook; missing receipts mean unknown, rather than proof that no hook ran.
+Old receipts cannot be reconstructed. Settings and project exclusions survive the update.
+For an existing local installation, explicitly run `python3 scripts/upgrade_local.py` when
+ready to review the updated hooks; opening the menu-bar app alone never upgrades them.
+The bridge also accepts upstream JSON progress lines before its final hook result.
+
 ### v0.2.1: SessionEnd compatibility fix
 
 The generated SessionEnd hook uses Codex's 3-second limit, with a 2-second upstream execution
@@ -229,6 +261,33 @@ hooks 的信任與真實對話執行、額度節省與回答品質等同尚未�
 
 這個本機工具替 [Microsoft TokenEconomizer](https://github.com/microsoft/TokenEconomizer)
 加上額度門檻。它不會更換你的主要模型，也不會自動安裝或核准任何插件。
+
+### v0.3.0：原生 macOS Menu bar 與本機執行紀錄
+
+原生 **TE Quota Bar** 顯示 5 小時／每週額度環、重置時間、hooks 信任狀態、額度資格，
+以及最後一次觀測到 hook、轉交上游、回傳注入內容的時間。
+**符合條件不代表正在執行；轉交不代表有內容可注入；回傳內容也不能證明主程式已採用，
+更不能據此宣稱已節省額度。**
+
+```bash
+python3 scripts/build_macos.py --output "/absolute/path/TE Quota Bar.app"
+```
+
+以 macOS 13 以上、Xcode command-line tools 及本專案的 Python 環境建置。
+本機版本會記住建置時的 Python 路徑，沒有內嵌 Python。此安裝使用
+`~/Library/Application Support/TE Quota Gate/runtime/` 與 `/Applications/ChatGPT.app`
+內附的 Codex CLI。開啟 App 後點上方選單列的 **TE**；初始狀態視窗可關閉，Menu bar
+圖示仍會保留。畫面每 3 秒更新，約每 60 秒執行唯讀 Codex 狀態查詢；會沿用新鮮額度
+快照與 8766 埠的既有 GUI，或自行啟動讀取／GUI。結束 App 會停止它的監測器；獨立啟動
+的讀取器和 GUI 不受影響。不加入登入項目、不發起模型呼叫、不代為核准權限。
+
+要觀察實際執行，需要連同 App 重新建置／安裝 v0.3.0 的 plugin bundle，並審核更新的
+hooks。v0.2.x 的 hooks 不寫入紀錄。新 hooks 只記錄允許的事件名、時間、結果、耗時與
+是否回傳內容。`hook-activity.json` 最多保留 40 筆近期紀錄及已記錄的累計次數，不含
+提示詞、回答、注入內容、session ID 或專案路徑。寫入採盡力方式且不阻擋 hook，因此
+沒有紀錄表示未知，不能據此證明從未執行。舊紀錄無法回補。更新會保留門檻及專案排除
+設定。既有本機安裝可在準備好重新審核時，手動執行 `python3 scripts/upgrade_local.py`；
+只開啟 Menu bar App 不會升級 hooks。包裝層也已支援上游先輸出 JSON 進度訊息、再輸出正式結果的情況。
 
 ### v0.2.1：SessionEnd 相容性修正
 

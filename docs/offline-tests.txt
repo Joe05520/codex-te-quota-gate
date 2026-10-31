@@ -41,3 +41,55 @@ python3 -m unittest discover -s tests -v
 Ran 33 tests in 6.315s
 OK
 Includes test_session_end_bounds_slow_upstream_without_host_clamping.
+
+2026-11-01 v0.3.0 local run
+python3 -m unittest discover -s tests -v
+Ran 39 tests in 6.372s
+OK
+
+2026-11-01 v0.3.0 final local suite
+test_native_backend_demo_is_separate_and_exits_on_stdin_close (test_activity_desktop.ActivityTests.test_native_backend_demo_is_separate_and_exits_on_stdin_close) ... ok
+test_native_backend_refreshes_invalid_fresh_snapshot_without_model_calls (test_activity_desktop.ActivityTests.test_native_backend_refreshes_invalid_fresh_snapshot_without_model_calls) ... ok
+test_observation_failure_does_not_break_hook (test_activity_desktop.ActivityTests.test_observation_failure_does_not_break_hook) ... ok
+test_read_only_hooks_rpc_filters_and_redacts (test_activity_desktop.ActivityTests.test_read_only_hooks_rpc_filters_and_redacts) ... ok
+test_receipts_distinguish_check_forward_context_without_sensitive_content (test_activity_desktop.ActivityTests.test_receipts_distinguish_check_forward_context_without_sensitive_content) ... ok
+test_status_stale_or_missing_is_never_active_and_missing_receipts_unknown (test_activity_desktop.ActivityTests.test_status_stale_or_missing_is_never_active_and_missing_receipts_unknown) ... ok
+test_generated_bundle_and_changed_source (test_gate.BundleTests.test_generated_bundle_and_changed_source) ... ok
+test_age_and_reset (test_gate.PolicyTests.test_age_and_reset) ... ok
+test_bad_percentages_and_resets (test_gate.PolicyTests.test_bad_percentages_and_resets) ... ok
+test_normalize_prefers_bucket_and_sanitizes (test_gate.PolicyTests.test_normalize_prefers_bucket_and_sanitizes) ... ok
+test_threshold_and_or (test_gate.PolicyTests.test_threshold_and_or) ... ok
+test_unknown_missing_duplicate_and_wrong_bucket (test_gate.PolicyTests.test_unknown_missing_duplicate_and_wrong_bucket) ... ok
+test_window_identity_uses_duration_not_primary (test_gate.PolicyTests.test_window_identity_uses_duration_not_primary) ... ok
+test_real_subprocess_handshake_read_and_no_turns (test_gate.RpcTests.test_real_subprocess_handshake_read_and_no_turns) ... ok
+test_timeout_error_and_invalid_json (test_gate.RpcTests.test_timeout_error_and_invalid_json) ... ok
+test_cli_hook_stdout_only_json (test_gate.RuntimeTests.test_cli_hook_stdout_only_json) ... ok
+test_collector_failure_invalidates_previous_active_snapshot (test_gate.RuntimeTests.test_collector_failure_invalidates_previous_active_snapshot) ... ok
+test_emergency_disable_and_sidecall (test_gate.RuntimeTests.test_emergency_disable_and_sidecall) ... ok
+test_full_switch_cycle_same_session (test_gate.RuntimeTests.test_full_switch_cycle_same_session) ... ok
+test_missing_corrupt_stale_and_reset_never_forward (test_gate.RuntimeTests.test_missing_corrupt_stale_and_reset_never_forward) ... ok
+test_session_end_bounds_slow_upstream_without_host_clamping (test_gate.RuntimeTests.test_session_end_bounds_slow_upstream_without_host_clamping) ... ok
+test_settings_override_and_separate_state (test_gate.RuntimeTests.test_settings_override_and_separate_state) ... ok
+test_snapshot_permissions (test_gate.RuntimeTests.test_snapshot_permissions) ... ok
+test_upstream_failure_output_and_timeout (test_gate.RuntimeTests.test_upstream_failure_output_and_timeout) ... ok
+test_upstream_hash_mismatch (test_gate.RuntimeTests.test_upstream_hash_mismatch) ... ok
+test_upstream_progress_lines_preserve_final_context (test_gate.RuntimeTests.test_upstream_progress_lines_preserve_final_context) ... ok
+test_demo_scenarios_and_live_mode_no_simulation (test_settings_gui.GuiTests.test_demo_scenarios_and_live_mode_no_simulation) ... ok
+test_host_origin_and_token_rejected (test_settings_gui.GuiTests.test_host_origin_and_token_rejected) ... ok
+test_invalid_existing_settings_not_overwritten (test_settings_gui.GuiTests.test_invalid_existing_settings_not_overwritten) ... ok
+test_invalid_input_never_changes_settings (test_settings_gui.GuiTests.test_invalid_input_never_changes_settings) ... ok
+test_page_and_assets (test_settings_gui.GuiTests.test_page_and_assets) ... ok
+test_save_persist_preview_and_conflict (test_settings_gui.GuiTests.test_save_persist_preview_and_conflict) ... ok
+test_demo_cli_rejects_live_file_overrides (test_settings_gui.SettingsTests.test_demo_cli_rejects_live_file_overrides) ... ok
+test_independent_thresholds_and_zero (test_settings_gui.SettingsTests.test_independent_thresholds_and_zero) ... ok
+test_invalid_settings (test_settings_gui.SettingsTests.test_invalid_settings) ... ok
+test_master_disable (test_settings_gui.SettingsTests.test_master_disable) ... ok
+test_project_exclusion_children_not_prefix_neighbors (test_settings_gui.SettingsTests.test_project_exclusion_children_not_prefix_neighbors) ... ok
+test_symlink_alias_and_duplicates (test_settings_gui.SettingsTests.test_symlink_alias_and_duplicates) ... ok
+test_generated_bundle_reads_same_gui_settings (test_settings_gui.SharedHookTests.test_generated_bundle_reads_same_gui_settings) ... ok
+test_live_settings_changes_without_rebuilding (test_settings_gui.SharedHookTests.test_live_settings_changes_without_rebuilding) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 7.171s
+
+OK
