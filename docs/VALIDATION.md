@@ -1,10 +1,10 @@
-# Validation — v0.3.0, 2026-11-01
+# Validation — v0.3.1, 2026-11-01
 
 ## Verified locally
 
 Environment: macOS, Python 3.12.5. Offline tests do not require Codex on PATH.
 
-`python3 -m unittest discover -s tests -v`: **40 tests passed**. Parameterized subcases cover:
+`python3 -m unittest discover -s tests -v`: **42 tests passed**. Parameterized subcases cover:
 
 - Either-window trigger; 14%, 14.99%, exactly 15%, 0%, 100%.
 - Same synthetic session: sufficient → low 5h → reset/sufficient → low weekly.
@@ -105,3 +105,21 @@ Real low-quota forwarding after user trust and actual context consumption remain
 The existing trusted v0.2.1 plugin was intentionally retained during a live threshold crossing.
 The native monitor can observe eligibility/trust immediately; detailed receipts require the
 explicit v0.3.0 upgrade and a new hook review. No live execution was synthesized for evidence.
+
+## v0.3.1 recovery and observation checks
+
+- Preserved the existing installed v0.3.1 plugin: five trusted, enabled hooks; no load problems.
+- 42 offline tests passed, including observation-state distinctions and diagnostic/live isolation.
+- Actual installed Codex CLI with a loopback-only canned response completed an ephemeral turn.
+  SessionStart, UserPromptSubmit, Stop and SessionEnd produced diagnostic receipts; there was
+  no tool call, so no PostToolUse was expected. No paid model was called.
+- The actual pinned upstream bootstrap was tested in a temporary directory: sufficient quota
+  skipped it; low quota called it; no cached facts returned no context; a cached synthetic fact
+  returned hook-specific context. Receipt counts were 3 checked / 2 forwarded / 1 context.
+- These diagnostics do not establish normal intervention in the current desktop conversation,
+  host consumption of the returned content, learning quality or quota savings.
+- Native panel sizing/scrolling and close/quit shortcuts are checked separately on the local app.
+
+Native v0.3.1 acceptance on the target Mac confirmed: the window stays within the visible
+screen, the close button/Esc/Cmd+W hide the panel while the status item remains, and Cmd+Q
+terminates the app and its owned Python monitor. Receipts for these checks stay local.

@@ -59,3 +59,8 @@ retain time/event/result/duration/context-present metadata, 40 recent items and 
 They exclude prompts, answers, injected text, session IDs and project paths; writes are private
 and best effort. Existing upstream envfacts storage remains governed by the upstream profile.
 The native app uses the existing Python installation and adds no login item.
+
+Explicit diagnostics write separate receipts and never increase daily-use counts. Native UI QA
+writes visibility booleans, a timestamp and an action name to menu-ui-health.json. The optional
+Codex runtime check uses only a local canned Responses endpoint; request bodies are discarded,
+no paid provider is called, and no user settings or trust records are changed.

@@ -93,3 +93,8 @@ test_live_settings_changes_without_rebuilding (test_settings_gui.SharedHookTests
 Ran 40 tests in 7.171s
 
 OK
+
+2026-11-01 v0.3.1 suite before quota interruption
+Ran 42 tests in 6.871s
+OK
+Includes intervention state distinctions and diagnostic/live isolation.

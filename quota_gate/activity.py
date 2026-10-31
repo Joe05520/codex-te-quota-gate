@@ -8,7 +8,7 @@ from .storage import read_snapshot, write_snapshot
 EVENTS = {'SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'SessionEnd'}
 
 
-def record_activity(snapshot_path, payload, answer, reason, duration):
+def record_activity(snapshot_path, payload, answer, reason, duration, *, diagnostic=False):
     try:
         import fcntl
         directory = Path(snapshot_path).resolve().parent
@@ -16,7 +16,7 @@ def record_activity(snapshot_path, payload, answer, reason, duration):
         fd = os.open(directory / 'hook-activity.lock', os.O_CREAT | os.O_RDWR, 0o600)
         with os.fdopen(fd, 'w') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            path = directory / 'hook-activity.json'
+            path = directory / ('diagnostic-hook-activity.json' if diagnostic else 'hook-activity.json')
             try:
                 state = read_snapshot(path)
                 if state.get('schemaVersion') != 1 or not isinstance(state.get('counts'), dict):
@@ -31,6 +31,7 @@ def record_activity(snapshot_path, payload, answer, reason, duration):
             emitted = isinstance(context, str) and bool(context.strip())
             forwarded = reason == 'forwarded_envfacts'
             receipt = {'at': time.time(), 'event': event, 'reason': reason,
+                       'source': 'diagnostic' if diagnostic else 'host',
                        'forwarded': forwarded, 'contextEmitted': forwarded and emitted,
                        'durationMs': round(duration * 1000)}
             counts = state.get('counts', {})

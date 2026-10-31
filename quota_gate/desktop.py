@@ -16,6 +16,22 @@ from .settings import configured_decision, read_settings
 from .storage import read_snapshot, write_snapshot
 
 
+def intervention(activity):
+    last = activity.get('lastEvent') if isinstance(activity, dict) else None
+    if not isinstance(last, dict):
+        return {'state': 'unknown', 'label': '尚未確認介入 · 尚無 hook 紀錄'}
+    reason = last.get('reason')
+    if reason in ('upstream_failed', 'invalid_upstream_output', 'upstream_bootstrap_changed', 'runner_failed'):
+        state, label = 'failed', 'TE 執行失敗 · 請查看最後結果'
+    elif last.get('contextEmitted'):
+        state, label = 'context_returned', 'TE 已回傳注入內容（最近一次）'
+    elif last.get('forwarded'):
+        state, label = 'forwarded', 'TE 已執行 · 未回傳注入內容'
+    else:
+        state, label = 'skipped', '未介入 · 最近一次 hook 已跳過'
+    return {'state': state, 'label': label, 'at': last.get('at')}
+
+
 def status(runtime, trust=None):
     runtime = Path(runtime)
     try:
@@ -34,7 +50,7 @@ def status(runtime, trust=None):
         activity = None
     return {'updatedAt': time.time(), 'decision': result, 'thresholds': thresholds,
             'excludedProjects': excluded, 'snapshotAt': quota.get('observedAt') if isinstance(quota, dict) else None,
-            'activity': activity, 'hooks': trust,
+            'activity': activity, 'hooks': trust, 'intervention': intervention(activity),
             'windows': quota.get('windows', []) if isinstance(quota, dict) else []}
 
 

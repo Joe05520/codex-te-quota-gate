@@ -25,7 +25,8 @@ def run_hook(payload, *, snapshot_path, bootstrap, expected_sha256,
     answer, reason = _run_hook(payload, snapshot_path=snapshot_path, bootstrap=bootstrap,
         expected_sha256=expected_sha256, threshold=threshold, max_age=max_age,
         timeout=timeout, env=env, settings_path=settings_path)
-    record_activity(snapshot_path, payload, answer, reason, time.monotonic() - started)
+    record_activity(snapshot_path, payload, answer, reason, time.monotonic() - started,
+                    diagnostic=(os.environ if env is None else env).get("TE_GATE_DIAGNOSTIC") == "1")
     return answer, reason
 
 

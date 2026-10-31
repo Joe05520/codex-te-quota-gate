@@ -6,7 +6,7 @@ import tempfile
 import time
 import unittest
 from quota_gate.activity import record_activity
-from quota_gate.desktop import status
+from quota_gate.desktop import status, intervention
 from quota_gate.gui import synthetic_snapshot
 from quota_gate.rpc import read_hooks, QuotaReadError
 from quota_gate.settings import DEFAULTS
@@ -104,3 +104,16 @@ for line in sys.stdin:
             self.assertEqual(value['decision']['remaining_5h'],14)
             proc.stdin.close();self.assertEqual(proc.wait(timeout=3),0)
             proc.stdout.close();proc.stderr.close()
+
+    def test_intervention_requires_receipt_and_separates_failure_and_context(self):
+        self.assertEqual(intervention(None)['state'],'unknown')
+        for receipt, expected in [({'reason':'quota_sufficient'},'skipped'),({'reason':'upstream_failed'},'failed'),({'reason':'forwarded_envfacts','forwarded':True},'forwarded'),({'reason':'forwarded_envfacts','forwarded':True,'contextEmitted':True},'context_returned')]:
+            self.assertEqual(intervention({'lastEvent':receipt})['state'],expected)
+
+    def test_diagnostic_does_not_increment_live_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'quota.json'
+            record_activity(path,b'{"hook_event_name":"SessionStart"}',{'additionalContext':'fixture'},'forwarded_envfacts',0,diagnostic=True)
+            self.assertFalse((Path(tmp)/'hook-activity.json').exists())
+            state=json.loads((Path(tmp)/'diagnostic-hook-activity.json').read_text())
+            self.assertEqual(state['lastEvent']['source'],'diagnostic')

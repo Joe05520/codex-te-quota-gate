@@ -18,9 +18,31 @@ All tools remain available, and the loop guard stays off.
 **Status: executable prototype; local installation and live quota reads verified.**
 The GUI, shared settings, policy, subprocess protocol and generated hook bridge have been
 tested. The bundled Codex CLI discovers all five hooks without load errors or timeout warnings.
-Hook trust and execution in actual conversations, quota savings and answer-quality equivalence
-have not been established. This project is independent of Microsoft and OpenAI.
+The five local hooks are trusted. Execution in the existing desktop conversation, quota savings
+and answer-quality equivalence have not been established. This project is independent of Microsoft and OpenAI.
 It does not change your main model, install plugins automatically, or approve hooks for you.
+
+### v0.3.1: evidence-based status and a dismissible panel
+
+The menu-bar panel now has a bounded scroll area, a persistent close button, **Esc / Cmd+W**
+to dismiss it, and **Cmd+Q** to quit. The menu-bar label and panel distinguish a skipped hook,
+a successful upstream call without context, returned context, failure, and no observations.
+The status describes the latest recorded event across projects; the quota condition is shown
+separately. No observations mean **unknown**, not confirmed inactivity or success.
+
+Normal callbacks write `hook-activity.json`. Explicit diagnostics use a separate
+`diagnostic-hook-activity.json`, so test events cannot inflate normal execution counts.
+The app writes only UI visibility metadata to `menu-ui-health.json` for local close/quit QA.
+A changed hook definition may require review; the local v0.3.1 upgrade retained the five
+already-trusted definitions without writing new trust entries.
+
+Two optional diagnostics are available: `scripts/check_codex_runtime.py` (Python 3.11+)
+uses the actual installed, trusted Codex hooks with an ephemeral CLI turn against a loopback
+canned response; `scripts/check_upstream_hook.py` uses the pinned upstream bootstrap and
+isolated synthetic quota/context files. Neither calls a paid model, changes real thresholds,
+or establishes execution in an existing desktop conversation. The runtime check refuses to
+run untrusted hooks. An existing conversation may need to be reopened or a new conversation
+started to load a plugin installed after that conversation began.
 
 ### v0.3.0: native macOS menu bar and local execution receipts
 
@@ -254,13 +276,32 @@ license; its implementation is not redistributed here.
 **狀態：可執行原型，已驗證本機安裝與真實額度讀取。**
 本機 GUI、共用設定、判斷邏輯、子程序通訊與產生的 hook 包裝層已測試；
 內附 Codex CLI 能找到全部五個 hooks，沒有載入錯誤或逾時警告。
-hooks 的信任與真實對話執行、額度節省與回答品質等同尚未確立。
+本機五個 hooks 已受信任；既有桌面對話的實際執行、額度節省與回答品質等同尚未確立。
 本專案獨立於 Microsoft 與 OpenAI。
 
 ### 這是什麼？
 
 這個本機工具替 [Microsoft TokenEconomizer](https://github.com/microsoft/TokenEconomizer)
 加上額度門檻。它不會更換你的主要模型，也不會自動安裝或核准任何插件。
+
+### v0.3.1：以紀錄判斷介入，並修正面板關閉
+
+Menu bar 面板已限制高度並可捲動，固定保留關閉按鈕；**Esc／Cmd+W** 關閉面板，
+**Cmd+Q** 結束程式。選單列與面板區分「已跳過」、「已呼叫但無注入內容」、
+「已回傳內容」、「失敗」與「尚無觀測」。狀態描述所有專案中最後一筆已記錄事件，
+額度資格另外顯示。沒有紀錄表示**未知**，不能當成已介入或確定沒有執行。
+
+日常事件寫入 `hook-activity.json`；明確標記的診斷使用獨立的
+`diagnostic-hook-activity.json`，不會增加日常介入次數。App 只將視窗可見性等 UI
+驗證資料寫入本機 `menu-ui-health.json`。hook 定義改變時可能需要重新審核；本機
+v0.3.1 升級保留了五個已信任定義，沒有寫入新的信任紀錄。
+
+提供兩個可選診斷：`scripts/check_codex_runtime.py`（Python 3.11 以上）使用實際已安裝、
+受信任的 Codex hooks，以短暫 CLI 工作階段連到本機固定回應；
+`scripts/check_upstream_hook.py` 使用固定版本的上游 bootstrap 與隔離的模擬額度／內容。
+兩者都不呼叫付費模型、不改真實門檻，也不能證明既有桌面對話已經介入。前者會拒絕
+執行未受信任的 hooks。若外掛是在對話開始後才安裝，既有對話可能需要重新開啟，
+或在新對話中載入更新。
 
 ### v0.3.0：原生 macOS Menu bar 與本機執行紀錄
 

@@ -17,18 +17,28 @@ final class GateModel: ObservableObject {
         if !error.isEmpty { return "監測器無法確認狀態" }
         if data.isEmpty { return "正在讀取本機狀態" }
         if !ready { return hooks.isEmpty ? "hooks 狀態尚未確認" : "hooks 尚未準備完成" }
+        if let intervention = data["intervention"] as? [String: Any], let state = intervention["state"] as? String, state != "unknown", let label = intervention["label"] as? String { return label }
         if !active { return decision["reason"] as? String == "quota_sufficient" ? "待命 · 額度充足" : "目前不符合啟用條件" }
         if let stamp = context["at"] as? Double, Date().timeIntervalSince1970 - stamp < 30 { return "剛回傳經驗內容" }
         if let stamp = forwarded["at"] as? Double, Date().timeIntervalSince1970 - stamp < 30 { return "剛轉交 TokenEconomizer" }
-        return "符合介入條件 · 等待 hook"
+        return "尚未確認介入 · 等待 hook"
     }
-    var tint: Color { !error.isEmpty ? .red : (!ready || active ? .orange : Color(red: 0.23, green: 0.48, blue: 0.43)) }
+    var tint: Color {
+        if !error.isEmpty || (data["intervention"] as? [String: Any])?["state"] as? String == "failed" { return .red }
+        return !ready || active ? .orange : Color(red: 0.23, green: 0.48, blue: 0.43)
+    }
     var barTitle: String {
         if !error.isEmpty { return "TE !" }
         if data.isEmpty { return "TE …" }
         if !ready { return "TE ?" }
+        if let status = data["intervention"] as? [String: Any], let state = status["state"] as? String {
+            if state == "failed" { return "TE 失敗" }
+            if state == "context_returned" { return "TE 最近已回傳" }
+            if state == "forwarded" { return "TE 最近已呼叫" }
+            if state == "skipped" { return "TE 最近已跳過" }
+        }
         if !active { return "TE 待命" }
-        return "TE 可介入"
+        return "TE 待確認"
     }
     func percent(_ key: String) -> String {
         guard let value = decision[key] as? Double else { return "—" }
@@ -88,6 +98,7 @@ struct GateView: View {
     let openGUI: () -> Void
     let showFiles: () -> Void
     let quit: () -> Void
+    let dismiss: () -> Void
     func line(_ label: String, _ value: String) -> some View {
         HStack(alignment: .top) {
             Text(label).foregroundStyle(.secondary)
@@ -96,6 +107,13 @@ struct GateView: View {
         }.font(.system(size: 12))
     }
     var body: some View {
+        VStack(spacing: 0) {
+        HStack {
+            Text("TE Quota Bar").font(.system(size: 12, weight: .semibold))
+            Spacer()
+            Button(action: dismiss) { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain).help("關閉面板（Esc）")
+        }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+        ScrollView {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "leaf.fill").font(.system(size: 22)).foregroundStyle(model.tint)
@@ -109,7 +127,7 @@ struct GateView: View {
             }
             VStack(alignment: .leading, spacing: 7) {
                 Label(model.title, systemImage: model.active ? "bolt.circle.fill" : "pause.circle").font(.system(size: 15, weight: .semibold)).foregroundStyle(model.tint)
-                Text("額度資格與實際執行分開顯示；排除專案仍會跳過。")
+                Text(model.active ? "目前額度條件：符合。上方狀態以最後一次真實 hook 為準。" : "目前額度條件：不符合。上方執行紀錄屬於最近一次事件。")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                 if !model.error.isEmpty { Text(model.error).font(.system(size: 11)).foregroundStyle(.red) }
                 if let version = model.hooks["version"] as? String, version.hasPrefix("0.2.") {
@@ -127,7 +145,7 @@ struct GateView: View {
                 line("Hooks 信任", model.hooks.isEmpty ? "尚未確認" : "\(model.hooks["trusted"] as? Int ?? 0) / \(model.hooks["count"] as? Int ?? 0) 已信任")
                 line("外掛版本", model.hooks["version"] as? String ?? "未知")
                 line("額度更新", (model.data["snapshotAt"] as? Double).map { GateModel.date(Date(timeIntervalSince1970: $0)) } ?? "尚無資料")
-                line("最後 hook", model.when(model.last))
+                line("最後 hook（所有專案）", model.when(model.last))
                 line("最後結果", model.reason)
                 line("最後轉交 TE", model.when(model.forwarded))
                 line("最後回傳注入內容", model.when(model.context))
@@ -137,14 +155,16 @@ struct GateView: View {
             }.padding(14).background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 14))
             Text("轉交不代表一定有經驗可注入；回傳內容也不等於已證實節省額度。紀錄不含提示詞、回答或專案路徑。")
                 .font(.system(size: 10)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }.padding(.horizontal, 20).padding(.bottom, 12)
+        }
             HStack(spacing: 10) {
                 Button("開啟設定", action: openGUI).buttonStyle(.borderedProminent).tint(Color(red: 0.23, green: 0.48, blue: 0.43))
                 Button("重新讀取") { model.refresh?() }
                 Spacer()
                 Button(action: showFiles) { Image(systemName: "folder") }.help("查看本機紀錄")
                 Button("結束", action: quit)
-            }.controlSize(.small)
-        }.padding(20).frame(width: 450)
+            }.controlSize(.small).padding(14)
+        }.frame(width: 450, height: min(640, max(320, (NSScreen.main?.visibleFrame.height ?? 740) - 100)))
     }
 }
 
@@ -166,19 +186,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.toolTip = "TE Quota Gate：查看額度資格與實際執行紀錄"
         let view = GateView(model: model, openGUI: {
             NSWorkspace.shared.open(URL(string: "http://127.0.0.1:8766/")!)
-        }, showFiles: { NSWorkspace.shared.activateFileViewerSelecting([self.base.appendingPathComponent("runtime/hook-activity.json")]) }, quit: { NSApp.terminate(nil) })
+        }, showFiles: { NSWorkspace.shared.activateFileViewerSelecting([self.base.appendingPathComponent("runtime/hook-activity.json")]) }, quit: { NSApp.terminate(nil) }, dismiss: { self.dismissPanels() })
         popover.behavior = .transient
+        popover.contentSize = NSSize(width: 450, height: min(640, max(320, (NSScreen.main?.visibleFrame.height ?? 740) - 100)))
         popover.contentViewController = NSHostingController(rootView: view)
         model.refresh = { [weak self] in try? self?.input?.fileHandleForWriting.write(contentsOf: Data("refresh\n".utf8)) }
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem(); mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu(); appMenuItem.submenu = appMenu
+        let closeItem = NSMenuItem(title: "關閉面板", action: #selector(dismissPanels), keyEquivalent: "w"); closeItem.target = self; appMenu.addItem(closeItem)
+        appMenu.addItem(NSMenuItem(title: "結束 TE Quota Bar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        NSApp.mainMenu = mainMenu
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 { self?.dismissPanels(); return nil }
+            return event
+        }
         startBackend()
         if !CommandLine.arguments.contains("--quiet") {
-            let win = NSWindow(contentRect: NSRect(x:0,y:0,width:450,height:610), styleMask:[.titled,.closable,.miniaturizable], backing:.buffered,defer:false)
+            let win = NSWindow(contentRect: NSRect(x:0,y:0,width:450,height:min(640, max(320, (NSScreen.main?.visibleFrame.height ?? 740) - 100))), styleMask:[.titled,.closable,.miniaturizable], backing:.buffered,defer:false)
             win.title = "TE Quota Bar"; win.contentView = NSHostingView(rootView: view); win.center(); win.isReleasedWhenClosed = false
             win.makeKeyAndOrderFront(nil); window = win; NSApp.activate(ignoringOtherApps: true)
         } else { toggle() }
+        recordUIHealth("opened")
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if let window = window { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
+        recordUIHealth("reopened")
         return true
     }
     func startBackend() {
@@ -213,12 +246,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+    @objc func dismissPanels() {
+        popover.performClose(nil); window?.orderOut(nil)
+        recordUIHealth("dismissed")
+    }
+    func recordUIHealth(_ action: String) {
+        let visibleFrame = (window?.screen ?? NSScreen.main)?.visibleFrame ?? .zero
+        let inside = window.map { visibleFrame.insetBy(dx: -1, dy: -1).contains($0.frame) } ?? true
+        let value: [String: Any] = ["action": action, "at": Date().timeIntervalSince1970,
+            "windowVisible": window?.isVisible ?? false, "popoverShown": popover.isShown,
+            "statusItemVisible": item?.isVisible ?? false, "windowWithinScreen": inside]
+        if let data = try? JSONSerialization.data(withJSONObject: value) {
+            let path = base.appendingPathComponent("runtime/menu-ui-health.json")
+            try? data.write(to: path, options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path.path)
+        }
+    }
     @objc func toggle() {
         if popover.isShown { popover.performClose(nil) }
         else if let button = item.button { popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY); NSApp.activate(ignoringOtherApps: true) }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         quitting = true
+        recordUIHealth("quit")
         try? input?.fileHandleForWriting.close()
         if let process = process, process.isRunning { process.terminate() }
         return .terminateNow
